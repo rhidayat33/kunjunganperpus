@@ -7,7 +7,7 @@
   <title>Daftar Hadir — Perpustakaan PKN STAN</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* Extra inline tweaks */
+    /* ── Daftar Hadir Page Extra Styles ── */
     .form-divider {
       border: none;
       border-top: 1px solid var(--border-color);
@@ -17,16 +17,170 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 22px; height: 22px;
+      width: 24px; height: 24px;
       background: var(--gradient-primary);
       color: white; border-radius: 50%;
       font-size: 11px; font-weight: 700;
       margin-right: 8px; flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(14,165,233,0.35);
     }
     .form-label-row {
       display: flex;
       align-items: center;
       margin-bottom: 3px;
+    }
+
+    /* ── Two-column layout ── */
+    .form-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      align-items: start;
+    }
+    .form-col { display: flex; flex-direction: column; gap: 0; }
+    .aside-col { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 24px; }
+
+    /* ── Aside: Welcome Card ── */
+    .aside-welcome {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      padding: 28px 24px 24px;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.5s ease both;
+      box-shadow: 0 8px 32px rgba(14,165,233,0.30);
+    }
+    .aside-welcome::before {
+      content: '';
+      position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .aside-welcome::after {
+      content: '';
+      position: absolute; bottom: -20px; left: -20px;
+      width: 80px; height: 80px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+    }
+    .aside-logo {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.35);
+      object-fit: contain;
+      margin: 0 auto 14px;
+      display: block;
+      background: white;
+      padding: 4px;
+      position: relative; z-index: 1;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .aside-welcome-title {
+      font-size: 16px; font-weight: 800;
+      color: white; margin-bottom: 4px;
+      position: relative; z-index: 1;
+    }
+    .aside-welcome-sub {
+      font-size: 12px; color: rgba(255,255,255,0.80);
+      font-weight: 500; position: relative; z-index: 1;
+      margin-bottom: 16px;
+    }
+    .aside-welcome-divider {
+      border: none; border-top: 1px solid rgba(255,255,255,0.20);
+      margin: 0 0 16px; position: relative; z-index: 1;
+    }
+    .aside-stat-row {
+      display: flex; justify-content: center; gap: 24px;
+      position: relative; z-index: 1;
+    }
+    .aside-stat-item { text-align: center; }
+    .aside-stat-num {
+      font-size: 22px; font-weight: 800; color: white;
+      line-height: 1; margin-bottom: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .aside-stat-lbl { font-size: 10px; color: rgba(255,255,255,0.72); font-weight: 500; }
+
+    /* ── Aside: Info Cards ── */
+    .aside-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      animation: fadeInUp 0.5s ease both;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .aside-card:hover { border-color: var(--border-glow); box-shadow: var(--shadow-sm); }
+    .aside-card-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .aside-card-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .aside-card-icon.sky    { background: rgba(14,165,233,0.12); }
+    .aside-card-icon.emerald{ background: rgba(5,150,105,0.12); }
+    .aside-card-icon.amber  { background: rgba(217,119,6,0.12); }
+    .aside-card-icon.purple { background: rgba(124,58,237,0.12); }
+    .aside-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+    .aside-info-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(14,165,233,0.07);
+      font-size: 12.5px;
+    }
+    .aside-info-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .aside-info-row .lbl { color: var(--text-muted); }
+    .aside-info-row .val { font-weight: 600; color: var(--text-primary); }
+    .aside-info-row .val.open { color: var(--accent-emerald); }
+    .aside-info-row .val.closed { color: var(--accent-rose); }
+
+    .aside-tip-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .aside-tip-list li {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;
+    }
+    .aside-tip-list li::before {
+      content: '✓';
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(5,150,105,0.12); color: var(--accent-emerald);
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── Aside: Live Badge ── */
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(5,150,105,0.10); border: 1px solid rgba(5,150,105,0.20);
+      border-radius: var(--radius-full); padding: 3px 10px;
+      font-size: 11px; font-weight: 600; color: var(--accent-emerald);
+      position: relative; z-index: 1;
+      margin-bottom: 14px;
+    }
+    .live-dot {
+      width: 6px; height: 6px; background: var(--accent-emerald);
+      border-radius: 50%; animation: pulse-dot 1.5s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1100px) {
+      .form-layout { grid-template-columns: 1fr 280px; }
+    }
+    @media (max-width: 860px) {
+      .form-layout { grid-template-columns: 1fr; }
+      .aside-col { position: static; }
     }
   </style>
 </head>
@@ -95,19 +249,19 @@
       <p class="page-description">Silakan isi formulir berikut sebelum menggunakan fasilitas perpustakaan.</p>
       <button onclick="toggleConfig()" id="config-toggle-btn"
         style="background:none;border:none;font-size:12px;cursor:pointer;color:var(--text-muted);
-               display:inline-flex;align-items:center;gap:4px;margin-top:10px;
+               display:inline-flex;align-items:center;gap:4px;margin-top:8px;
                font-family:'Inter',sans-serif;padding:0;transition:color 0.15s;">
         ⚙️ Konfigurasi URL Apps Script
       </button>
     </div>
 
-    <!-- Config Panel (hidden by default) -->
+    <!-- Config Panel -->
     <div class="config-panel" id="config-panel" style="display:none;">
       <div class="config-title">⚙️ Konfigurasi Apps Script URL</div>
       <div class="config-input-group">
         <input type="text" id="script-url-input"
                placeholder="Tempel URL deployment Google Apps Script di sini...">
-        <button class="config-btn" id="save-url-btn">Simpan & Aktifkan</button>
+        <button class="config-btn" id="save-url-btn">Simpan &amp; Aktifkan</button>
       </div>
       <div class="config-hint">
         Masukkan URL deployment Google Apps Script agar data daftar hadir tersimpan ke Google Sheets.
@@ -118,152 +272,285 @@
     <!-- Alert Box -->
     <div id="alert-box" style="display:none;margin-bottom:18px;"></div>
 
-    <!-- Date Banner -->
-    <div class="date-banner" id="date-banner">
-      <span style="font-size:18px;">📅</span>
-      <span id="date-banner-text">Memuat tanggal...</span>
-    </div>
+    <!-- ── Two-column layout ── -->
+    <div class="form-layout">
 
-    <!-- Form Card -->
-    <div class="form-card" id="form-card">
+      <!-- LEFT: Form Column -->
+      <div class="form-col">
 
-      <!-- ── Bagian 1: Identitas ── -->
-      <div class="form-section">
-        <div class="form-label-row">
-          <span class="section-number">1</span>
-          <label class="form-label" for="nama-input" style="margin-bottom:0;">
-            NIM / NIP / Nama Lengkap
-          </label>
+        <!-- Date Banner -->
+        <div class="date-banner" id="date-banner" style="margin-bottom:20px;">
+          <span style="font-size:18px;">📅</span>
+          <span id="date-banner-text">Memuat tanggal...</span>
         </div>
-        <span class="form-label-hint">
-          Mahasiswa isi NIM · Pegawai isi NIP · Tamu isi nama lengkap
-        </span>
-        <input
-          type="text"
-          id="nama-input"
-          class="form-input"
-          placeholder="Contoh: 4101234567 &nbsp;|&nbsp; 197001012000011001 &nbsp;|&nbsp; Budi Santoso"
-          autocomplete="off"
-          spellcheck="false"
-        >
-        <!-- Category preview badge -->
-        <div id="category-preview" style="margin-top:8px;display:none;">
-          <span id="category-badge" style="
-            display:inline-flex;align-items:center;gap:5px;
-            padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
-          </span>
-        </div>
-      </div>
 
-      <hr class="form-divider">
+        <!-- Form Card -->
+        <div class="form-card" id="form-card">
 
-      <!-- ── Bagian 2: Tujuan ── -->
-      <div class="form-section">
-        <div class="form-label-row">
-          <span class="section-number">2</span>
-          <label class="form-label" style="margin-bottom:0;">Tujuan Berkunjung</label>
-        </div>
-        <span class="form-label-hint">Pilih satu atau beberapa tujuan kunjungan Anda</span>
-
-        <div class="purpose-grid" id="purpose-grid">
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Meminjam/Mengembalikan Buku">
-            <span>📚 Meminjam/Mengembalikan Buku</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Mengunjungi Ruang Baca dan Referensi">
-            <span>🔍 Ruang Baca &amp; Referensi</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Diskusi Kelompok">
-            <span>👥 Diskusi Kelompok</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Belajar Mandiri">
-            <span>💡 Belajar Mandiri</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Mengakses Layanan Data (LSEG)">
-            <span>📈 Layanan Data (LSEG)</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Mengakses Layanan E-Journal">
-            <span>📰 Layanan E-Journal</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Mengakses Karya Tulis / Repositori">
-            <span>🗄️ Karya Tulis / Repositori</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Healing / Rehat">
-            <span>🌿 Healing / Rehat</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Rapat">
-            <span>🤝 Rapat</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Bimbingan dengan Dosen">
-            <span>🎓 Bimbingan dengan Dosen</span>
-          </label>
-          <label class="purpose-chip">
-            <input type="checkbox" name="tujuan" value="Lainnya">
-            <span>✏️ Lainnya</span>
-          </label>
-        </div>
-      </div>
-
-      <hr class="form-divider">
-
-      <!-- ── Bagian 3: Durasi ── -->
-      <div class="form-section">
-        <div class="form-label-row">
-          <span class="section-number">3</span>
-          <label class="form-label" style="margin-bottom:0;">Estimasi Durasi Kunjungan</label>
-        </div>
-        <span class="form-label-hint">Pilih perkiraan lama waktu Anda di perpustakaan</span>
-
-        <div class="duration-grid">
-          <label class="duration-card">
-            <input type="radio" name="durasi" value="Kurang dari 1 jam">
-            <div class="duration-card-inner">
-              <div class="duration-icon">⚡</div>
-              <div class="duration-label">Kurang dari 1 Jam</div>
+          <!-- ── Bagian 1: Identitas ── -->
+          <div class="form-section">
+            <div class="form-label-row">
+              <span class="section-number">1</span>
+              <label class="form-label" for="nama-input" style="margin-bottom:0;">
+                NIM / NIP / Nama Lengkap
+              </label>
             </div>
-          </label>
-          <label class="duration-card">
-            <input type="radio" name="durasi" value="1-2 jam">
-            <div class="duration-card-inner">
-              <div class="duration-icon">🕐</div>
-              <div class="duration-label">1 – 2 Jam</div>
+            <span class="form-label-hint">
+              Mahasiswa isi NIM · Pegawai isi NIP · Tamu isi nama lengkap
+            </span>
+            <input
+              type="text"
+              id="nama-input"
+              class="form-input"
+              placeholder="Contoh: 4101234567 &nbsp;|&nbsp; 197001012000011001 &nbsp;|&nbsp; Budi Santoso"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <!-- Category preview badge -->
+            <div id="category-preview" style="margin-top:8px;display:none;">
+              <span id="category-badge" style="
+                display:inline-flex;align-items:center;gap:5px;
+                padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
+              </span>
             </div>
-          </label>
-          <label class="duration-card">
-            <input type="radio" name="durasi" value="2-3 jam">
-            <div class="duration-card-inner">
-              <div class="duration-icon">🕑</div>
-              <div class="duration-label">2 – 3 Jam</div>
+          </div>
+
+          <hr class="form-divider">
+
+          <!-- ── Bagian 2: Tujuan ── -->
+          <div class="form-section">
+            <div class="form-label-row">
+              <span class="section-number">2</span>
+              <label class="form-label" style="margin-bottom:0;">Tujuan Berkunjung</label>
             </div>
-          </label>
-          <label class="duration-card">
-            <input type="radio" name="durasi" value="Lebih dari 3 jam">
-            <div class="duration-card-inner">
-              <div class="duration-icon">🕓</div>
-              <div class="duration-label">Lebih dari 3 Jam</div>
+            <span class="form-label-hint">Pilih satu atau beberapa tujuan kunjungan Anda</span>
+
+            <div class="purpose-grid" id="purpose-grid">
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Meminjam/Mengembalikan Buku">
+                <span>📚 Meminjam/Mengembalikan Buku</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Mengunjungi Ruang Baca dan Referensi">
+                <span>🔍 Ruang Baca &amp; Referensi</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Diskusi Kelompok">
+                <span>👥 Diskusi Kelompok</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Belajar Mandiri">
+                <span>💡 Belajar Mandiri</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Mengakses Layanan Data (LSEG)">
+                <span>📈 Layanan Data (LSEG)</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Mengakses Layanan E-Journal">
+                <span>📰 Layanan E-Journal</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Mengakses Karya Tulis / Repositori">
+                <span>🗄️ Karya Tulis / Repositori</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Healing / Rehat">
+                <span>🌿 Healing / Rehat</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Rapat">
+                <span>🤝 Rapat</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Bimbingan dengan Dosen">
+                <span>🎓 Bimbingan dengan Dosen</span>
+              </label>
+              <label class="purpose-chip">
+                <input type="checkbox" name="tujuan" value="Lainnya">
+                <span>✏️ Lainnya</span>
+              </label>
             </div>
-          </label>
+          </div>
+
+          <hr class="form-divider">
+
+          <!-- ── Bagian 3: Durasi ── -->
+          <div class="form-section">
+            <div class="form-label-row">
+              <span class="section-number">3</span>
+              <label class="form-label" style="margin-bottom:0;">Estimasi Durasi Kunjungan</label>
+            </div>
+            <span class="form-label-hint">Pilih perkiraan lama waktu Anda di perpustakaan</span>
+
+            <div class="duration-grid">
+              <label class="duration-card">
+                <input type="radio" name="durasi" value="Kurang dari 1 jam">
+                <div class="duration-card-inner">
+                  <div class="duration-icon">⚡</div>
+                  <div class="duration-label">Kurang dari 1 Jam</div>
+                </div>
+              </label>
+              <label class="duration-card">
+                <input type="radio" name="durasi" value="1-2 jam">
+                <div class="duration-card-inner">
+                  <div class="duration-icon">🕐</div>
+                  <div class="duration-label">1 – 2 Jam</div>
+                </div>
+              </label>
+              <label class="duration-card">
+                <input type="radio" name="durasi" value="2-3 jam">
+                <div class="duration-card-inner">
+                  <div class="duration-icon">🕑</div>
+                  <div class="duration-label">2 – 3 Jam</div>
+                </div>
+              </label>
+              <label class="duration-card">
+                <input type="radio" name="durasi" value="Lebih dari 3 jam">
+                <div class="duration-card-inner">
+                  <div class="duration-icon">🕓</div>
+                  <div class="duration-label">Lebih dari 3 Jam</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- ── Submit ── -->
+          <div class="form-section">
+            <button class="submit-btn" id="submit-btn">✅ Kirim Daftar Hadir</button>
+          </div>
+
+        </div><!-- end .form-card -->
+      </div><!-- end .form-col -->
+
+      <!-- RIGHT: Info Panel -->
+      <div class="aside-col">
+
+        <!-- Welcome Card -->
+        <div class="aside-welcome">
+          <div class="live-badge">
+            <span class="live-dot"></span> Sistem Aktif
+          </div>
+          <img src="logo-perpus.png" alt="Logo Perpustakaan PKN STAN" class="aside-logo">
+          <div class="aside-welcome-title">Perpustakaan PKN STAN</div>
+          <div class="aside-welcome-sub">Dashboard Kunjungan Digital</div>
+          <hr class="aside-welcome-divider">
+          <div class="aside-stat-row">
+            <div class="aside-stat-item">
+              <div class="aside-stat-num" id="aside-today">–</div>
+              <div class="aside-stat-lbl">Hari Ini</div>
+            </div>
+            <div class="aside-stat-item" style="border-left:1px solid rgba(255,255,255,0.20);padding-left:24px;">
+              <div class="aside-stat-num" id="aside-time-display">–</div>
+              <div class="aside-stat-lbl">Waktu</div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- ── Submit ── -->
-      <div class="form-section">
-        <button class="submit-btn" id="submit-btn">✅ Kirim Daftar Hadir</button>
-      </div>
+        <!-- Jam Layanan -->
+        <div class="aside-card" style="animation-delay:0.1s;">
+          <div class="aside-card-header">
+            <div class="aside-card-icon sky">🕐</div>
+            <div class="aside-card-title">Jam Layanan</div>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">Senin – Jumat</span>
+            <span class="val">08.00 – 16.00</span>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">Sabtu – Minggu</span>
+            <span class="val closed">Tutup</span>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">Status Sekarang</span>
+            <span class="val" id="aside-status">–</span>
+          </div>
+        </div>
 
-    </div><!-- end .form-card -->
+        <!-- Panduan Pengisian -->
+        <div class="aside-card" style="animation-delay:0.2s;">
+          <div class="aside-card-header">
+            <div class="aside-card-icon emerald">💡</div>
+            <div class="aside-card-title">Panduan Pengisian</div>
+          </div>
+          <ul class="aside-tip-list">
+            <li>Isi NIM (Mahasiswa) atau NIP (Pegawai) agar terdeteksi otomatis</li>
+            <li>Pilih semua tujuan yang sesuai dengan keperluan kunjungan</li>
+            <li>Pilih estimasi durasi yang paling mendekati rencana Anda</li>
+            <li>Klik <strong>Kirim Daftar Hadir</strong> untuk menyimpan data</li>
+          </ul>
+        </div>
+
+        <!-- Fasilitas -->
+        <div class="aside-card" style="animation-delay:0.3s;">
+          <div class="aside-card-header">
+            <div class="aside-card-icon purple">🏛️</div>
+            <div class="aside-card-title">Fasilitas Tersedia</div>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">📚 Koleksi Buku</span>
+            <span class="val">Tersedia</span>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">💻 Ruang Komputer</span>
+            <span class="val">Tersedia</span>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">📡 WiFi Gratis</span>
+            <span class="val open">Aktif</span>
+          </div>
+          <div class="aside-info-row">
+            <span class="lbl">🗂️ Repositori Digital</span>
+            <span class="val">Tersedia</span>
+          </div>
+        </div>
+
+      </div><!-- end .aside-col -->
+    </div><!-- end .form-layout -->
+
   </main>
 </div>
 
 <script src="js/daftar-hadir.js"></script>
+<script>
+  /* ── Aside panel live updates ── */
+  (function () {
+    function updateAside() {
+      var now = new Date();
+      var hh  = String(now.getHours()).padStart(2,'0');
+      var mm  = String(now.getMinutes()).padStart(2,'0');
+      var el  = document.getElementById('aside-time-display');
+      if (el) el.textContent = hh + ':' + mm;
+
+      var day    = now.getDay();
+      var hour   = now.getHours();
+      var isOpen = (day >= 1 && day <= 5) && (hour >= 8 && hour < 16);
+      var st     = document.getElementById('aside-status');
+      if (st) {
+        st.textContent  = isOpen ? 'Buka' : 'Tutup';
+        st.className    = 'val ' + (isOpen ? 'open' : 'closed');
+      }
+    }
+    updateAside();
+    setInterval(updateAside, 30000);
+
+    /* ── Count today's submissions stored in localStorage ── */
+    var todayKey  = 'kunjungan_today_' + new Date().toDateString();
+    var todayEl   = document.getElementById('aside-today');
+    function refreshToday() {
+      var count = parseInt(localStorage.getItem(todayKey) || '0', 10);
+      if (todayEl) todayEl.textContent = count;
+    }
+    refreshToday();
+
+    /* Increment when form submits successfully */
+    var origSuccess = window.onSubmitSuccessHook;
+    document.addEventListener('kunjungan:submit-success', function () {
+      var c = parseInt(localStorage.getItem(todayKey) || '0', 10) + 1;
+      localStorage.setItem(todayKey, c);
+      refreshToday();
+    });
+  })();
+</script>
 </body>
 </html>

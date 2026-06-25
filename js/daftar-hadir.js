@@ -172,6 +172,8 @@ function onSubmitSuccess(nama) {
     `✅ Terima kasih, ${label}! Daftar hadir Anda berhasil dicatat. Selamat menggunakan fasilitas perpustakaan.`,
     'success'
   );
+  // Update aside counter
+  document.dispatchEvent(new CustomEvent('kunjungan:submit-success'));
   resetForm();
   document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
