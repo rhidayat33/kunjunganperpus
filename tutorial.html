@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tutorial penggunaan Dashboard Kunjungan Perpustakaan PKN STAN.">
+  <title>Tutorial — Perpustakaan PKN STAN</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app-layout">
+
+  <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Buka menu">
+    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6"  x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="brand-icon" style="background:none;box-shadow:none;padding:0;overflow:hidden;">
+          <img src="logo-perpus.png" alt="Logo Perpustakaan PKN STAN" style="width:42px;height:42px;object-fit:contain;border-radius:50%;">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Perpustakaan</span>
+          <span class="brand-subtitle">PKN STAN</span>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Utama</div>
+      <a href="daftar-hadir.html" class="nav-item">
+        <span class="nav-icon">📋</span><span>Daftar Hadir</span>
+      </a>
+      <a href="statistik.html" class="nav-item">
+        <span class="nav-icon">📊</span><span>Statistik Kunjungan</span>
+      </a>
+      <a href="tutorial.html" class="nav-item active">
+        <span class="nav-icon">📖</span><span>Tutorial</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-text">© 2025 Perpustakaan PKN STAN<br>Dashboard Kunjungan</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Tutorial Penggunaan</h1>
+      <p class="page-description">Panduan lengkap setup dan penggunaan Dashboard Kunjungan Perpustakaan PKN STAN.</p>
+    </div>
+
+    <!-- ════════════════════════════════
+         BAGIAN A — Setup Apps Script
+         ════════════════════════════════ -->
+    <div class="tutorial-card">
+      <h2>⚙️ Bagian A — Setup Google Apps Script</h2>
+
+      <div class="tutorial-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Buka Google Apps Script</h3>
+          <p>Buka browser dan kunjungi <a href="https://script.google.com" target="_blank">script.google.com</a>.
+             Login menggunakan akun Google Anda.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Buat Proyek Baru</h3>
+          <p>Klik tombol <strong>+ Proyek Baru</strong> (New Project) di bagian kiri atas.
+             Beri nama proyek, misalnya: <code class="code-inline">Kunjungan Perpustakaan PKN STAN</code>.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Hapus Kode Default &amp; Tempel Kode Baru</h3>
+          <p>Hapus semua kode yang ada di editor, lalu tempel seluruh kode berikut ini:</p>
+          <div class="code-block">// ============================================
+//  Google Apps Script — Kunjungan Perpustakaan
+//  Dashboard Kunjungan PKN STAN
+// ============================================
+
+var SPREADSHEET_ID = '1S2KQi9V0BM3RR_MMSfJ1Ua6KIgcH9APS2-fiQ_OH0_k';
+var SHEET_GID      = 620037545;
+
+function getSheet() {
+  var ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheets = ss.getSheets();
+  for (var i = 0; i &lt; sheets.length; i++) {
+    if (sheets[i].getSheetId() === SHEET_GID) return sheets[i];
+  }
+  return ss.getActiveSheet();
+}
+
+function doPost(e) {
+  try {
+    var sheet     = getSheet();
+    var timestamp = new Date();
+    var nama      = (e.parameter.nama   || '').trim();
+    var tujuan    = (e.parameter.tujuan || '').trim();
+    var durasi    = (e.parameter.durasi || '').trim();
+    sheet.appendRow([timestamp, '', nama, tujuan, durasi]);
+    return jsonResponse({ status: 'success', message: 'Data berhasil disimpan.' });
+  } catch (err) {
+    return jsonResponse({ status: 'error', message: err.toString() });
+  }
+}
+
+function doGet(e) {
+  try {
+    var sheet   = getSheet();
+    var allRows = sheet.getDataRange().getValues();
+    var startIdx = 0;
+    if (allRows.length > 0) {
+      var firstCell = String(allRows[0][0]).toLowerCase();
+      if (firstCell === 'timestamp' || firstCell === 'waktu') startIdx = 1;
+    }
+    var result = [];
+    for (var i = startIdx; i &lt; allRows.length; i++) {
+      var row  = allRows[i];
+      var nama = String(row[2] || '').trim();
+      if (!nama) continue;
+      var ts = '';
+      try { ts = (row[0] instanceof Date) ? row[0].toISOString() : new Date(row[0]).toISOString(); } catch(x){}
+      result.push({ timestamp: ts, nama: nama, tujuan: String(row[3]||''), durasi: String(row[4]||'') });
+    }
+    return jsonResponse({ status: 'success', total: result.length, data: result });
+  } catch (err) {
+    return jsonResponse({ status: 'error', message: err.toString() });
+  }
+}
+
+function jsonResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+          <div class="tip-box">💾 Kode ini sudah tersimpan di file <strong>apps-script/Code.gs</strong> dalam folder proyek Anda.</div>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Simpan Kode</h3>
+          <p>Tekan <code class="code-inline">Ctrl + S</code> (atau klik ikon simpan) untuk menyimpan kode.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         BAGIAN B — Deploy
+         ════════════════════════════════ -->
+    <div class="tutorial-card">
+      <h2>🚀 Bagian B — Deploy sebagai Web App</h2>
+
+      <div class="tutorial-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Klik "Deploy" → "New Deployment"</h3>
+          <p>Di toolbar bagian atas editor Apps Script, klik tombol biru <strong>Deploy</strong>,
+             lalu pilih <strong>New Deployment</strong>.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Pilih Tipe: Web App</h3>
+          <p>Pada dialog yang muncul, klik ikon ⚙️ lalu pilih <strong>Web App</strong> sebagai tipe deployment.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Atur Izin Akses</h3>
+          <p>Isi konfigurasi berikut:</p>
+          <ul>
+            <li><strong>Description:</strong> Kunjungan Perpustakaan PKN STAN (opsional)</li>
+            <li><strong>Execute as:</strong> <code class="code-inline">Me (akun Google Anda)</code></li>
+            <li><strong>Who has access:</strong> <code class="code-inline">Anyone</code> — <em>penting agar form bisa diakses tanpa login</em></li>
+          </ul>
+          <div class="tip-box">⚠️ Jika memilih <strong>Anyone with Google Account</strong>, pengunjung harus login Google sebelum mengisi form. Pilih <strong>Anyone</strong> agar semua bisa mengakses.</div>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Izinkan Akses (Authorize)</h3>
+          <p>Klik <strong>Deploy</strong>. Jika diminta, klik <strong>Authorize access</strong> dan ikuti langkah
+             login Google. Jika muncul peringatan "This app isn't verified", klik <strong>Advanced</strong>
+             → <strong>Go to … (unsafe)</strong>. Ini aman karena kode dibuat sendiri.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h3>Salin URL Web App</h3>
+          <p>Setelah berhasil deploy, akan muncul <strong>Web app URL</strong>. Salin URL tersebut —
+             formatnya seperti:<br>
+             <code class="code-inline">https://script.google.com/macros/s/AKfy.../exec</code>
+          </p>
+          <div class="tip-box">📋 Simpan URL ini, Anda akan memerlukannya di langkah berikutnya.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         BAGIAN C — Konfigurasi Website
+         ════════════════════════════════ -->
+    <div class="tutorial-card">
+      <h2>🔗 Bagian C — Konfigurasi URL di Website</h2>
+
+      <div class="tutorial-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Buka Halaman Daftar Hadir</h3>
+          <p>Buka file <a href="daftar-hadir.html">daftar-hadir.html</a> di browser Anda.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Klik "Konfigurasi URL Apps Script"</h3>
+          <p>Pada halaman Daftar Hadir, klik tombol kecil <strong>⚙️ Konfigurasi URL Apps Script</strong>
+             di bawah judul halaman.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Tempel URL &amp; Simpan</h3>
+          <p>Tempel URL Web App yang telah disalin ke dalam kotak input, lalu klik <strong>Simpan &amp; Aktifkan</strong>.
+             URL akan tersimpan di browser secara otomatis (localStorage).</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Konfigurasi di Halaman Statistik</h3>
+          <p>URL yang sama juga perlu dikonfigurasi di <a href="statistik.html">statistik.html</a>. Lakukan hal yang
+             sama: klik <strong>⚙️ Konfigurasi URL</strong>, tempel URL, dan klik <strong>Hubungkan</strong>.</p>
+          <div class="tip-box">💡 URL disimpan per-browser (localStorage). Jika membuka di browser/komputer berbeda, perlu konfigurasi ulang.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         BAGIAN D — Cara Pakai
+         ════════════════════════════════ -->
+    <div class="tutorial-card">
+      <h2>📋 Bagian D — Menggunakan Form Daftar Hadir</h2>
+
+      <div class="tutorial-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Isi NIM / NIP / Nama</h3>
+          <p>Pengunjung mengisi identitas sesuai status:</p>
+          <ul>
+            <li><strong>Mahasiswa:</strong> isi NIM (dimulai angka 3 atau 4, misal: <code class="code-inline">4101234567</code>)</li>
+            <li><strong>Pegawai:</strong> isi NIP (dimulai 19 atau 20, misal: <code class="code-inline">197001012000011001</code>)</li>
+            <li><strong>Tamu/Umum:</strong> isi nama lengkap</li>
+          </ul>
+          <div class="tip-box">🔍 Sistem akan otomatis mendeteksi kategori pengunjung saat mengetik dan menampilkan badge konfirmasi.</div>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Pilih Tujuan Berkunjung</h3>
+          <p>Centang satu atau beberapa tujuan kunjungan dari 11 pilihan yang tersedia.
+             Pilihan yang dipilih akan berubah warna biru sebagai konfirmasi.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Pilih Estimasi Durasi</h3>
+          <p>Pilih salah satu dari empat kartu durasi: Kurang dari 1 Jam, 1–2 Jam, 2–3 Jam, atau Lebih dari 3 Jam.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Kirim Form</h3>
+          <p>Klik tombol <strong>✅ Kirim Daftar Hadir</strong>. Pesan sukses akan muncul jika data berhasil dikirim ke Google Sheets.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         BAGIAN E — Membaca Statistik
+         ════════════════════════════════ -->
+    <div class="tutorial-card">
+      <h2>📊 Bagian E — Membaca Halaman Statistik</h2>
+
+      <div class="tutorial-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Stat Cards (Ringkasan)</h3>
+          <p>Empat kartu di bagian atas menampilkan: <strong>Total Kunjungan</strong> keseluruhan,
+             <strong>Kunjungan Hari Ini</strong>, <strong>Tujuan Terpopuler</strong>, dan
+             <strong>Rata-rata Durasi</strong> kunjungan.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Tab Periode (Harian / Mingguan / Bulanan)</h3>
+          <p>Gunakan tab di bawah stat cards untuk mengubah tampilan grafik Tren Kunjungan sesuai periode
+             yang diinginkan.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Empat Grafik</h3>
+          <ul>
+            <li><strong>Tren Frekuensi:</strong> bar chart jumlah kunjungan per periode</li>
+            <li><strong>Kategori Pengunjung:</strong> donut chart Mahasiswa / Pegawai / Tamu</li>
+            <li><strong>Durasi Kunjungan:</strong> bar chart distribusi lama kunjungan</li>
+            <li><strong>Tujuan Berkunjung:</strong> horizontal bar chart frekuensi per tujuan</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Perbarui Data</h3>
+          <p>Klik tombol <strong>🔄 Perbarui Data</strong> di pojok kanan atas untuk mengambil data terbaru
+             dari Google Sheets tanpa me-reload halaman.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════
+         BAGIAN F — Troubleshooting
+         ════════════════════════════════ -->
+    <div class="tutorial-card">
+      <h2>🔧 Troubleshooting</h2>
+
+      <div class="tutorial-step">
+        <div class="step-num">!</div>
+        <div class="step-body">
+          <h3>Form berhasil terkirim tapi data tidak muncul di Sheets</h3>
+          <p>Pastikan URL Apps Script sudah benar. Coba buka URL langsung di browser — jika muncul JSON,
+             berarti deployment berhasil. Jika muncul error, coba deploy ulang Apps Script.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">!</div>
+        <div class="step-body">
+          <h3>Statistik tidak muncul / error "Gagal terhubung"</h3>
+          <p>Pastikan URL Apps Script yang dikonfigurasi di halaman statistik sama persis dengan URL deployment.
+             Coba klik <strong>🔄 Perbarui Data</strong>. Jika masih gagal, periksa koneksi internet.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">!</div>
+        <div class="step-body">
+          <h3>Setelah update kode Apps Script, data tidak berubah</h3>
+          <p>Setiap kali mengubah kode Apps Script, Anda harus membuat deployment <strong>baru</strong>
+             (bukan mengedit yang lama). Klik Deploy → <strong>New Deployment</strong>, lalu salin URL baru
+             dan perbarui konfigurasi di website.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-step">
+        <div class="step-num">!</div>
+        <div class="step-body">
+          <h3>URL perlu dikonfigurasi ulang di browser lain</h3>
+          <p>URL tersimpan di <em>localStorage</em> browser, bukan di server. Setiap browser/komputer baru
+             perlu konfigurasi URL sekali saja.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Minimal sidebar toggle for tutorial page
+  document.addEventListener('DOMContentLoaded', function () {
+    const btn     = document.getElementById('mobile-menu-btn');
+    const overlay = document.getElementById('mobile-overlay');
+    const sidebar = document.getElementById('sidebar');
+    if (btn)     btn.addEventListener('click',    () => { sidebar.classList.toggle('open');  overlay.classList.toggle('visible'); });
+    if (overlay) overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('visible'); });
+  });
+</script>
+</body>
+</html>

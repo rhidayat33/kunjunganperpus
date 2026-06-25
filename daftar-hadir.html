@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Form daftar hadir kunjungan Perpustakaan PKN STAN — isi identitas dan tujuan kunjungan Anda.">
+  <title>Daftar Hadir — Perpustakaan PKN STAN</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Extra inline tweaks */
+    .form-divider {
+      border: none;
+      border-top: 1px solid var(--border-color);
+      margin: 0 0 24px;
+    }
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      background: var(--gradient-primary);
+      color: white; border-radius: 50%;
+      font-size: 11px; font-weight: 700;
+      margin-right: 8px; flex-shrink: 0;
+    }
+    .form-label-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Mobile Menu -->
+  <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Buka menu">
+    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="6"  x2="21" y2="6"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="brand-icon" style="background:none;box-shadow:none;padding:0;overflow:hidden;">
+          <img src="logo-perpus.png" alt="Logo Perpustakaan PKN STAN" style="width:42px;height:42px;object-fit:contain;border-radius:50%;">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Perpustakaan</span>
+          <span class="brand-subtitle">PKN STAN</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live clock -->
+    <div class="sidebar-datetime">
+      <div class="sidebar-date" id="current-date">Memuat...</div>
+      <div class="sidebar-time" id="current-time">--:--:--</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Utama</div>
+      <a href="daftar-hadir.html" class="nav-item active">
+        <span class="nav-icon">📋</span>
+        <span>Daftar Hadir</span>
+      </a>
+      <a href="statistik.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Statistik Kunjungan</span>
+      </a>
+      <a href="tutorial.html" class="nav-item">
+        <span class="nav-icon">📖</span>
+        <span>Tutorial</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-text">
+        © 2025 Perpustakaan PKN STAN<br>Dashboard Kunjungan
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Daftar Hadir Kunjungan</h1>
+      <p class="page-description">Silakan isi formulir berikut sebelum menggunakan fasilitas perpustakaan.</p>
+      <button onclick="toggleConfig()" id="config-toggle-btn"
+        style="background:none;border:none;font-size:12px;cursor:pointer;color:var(--text-muted);
+               display:inline-flex;align-items:center;gap:4px;margin-top:10px;
+               font-family:'Inter',sans-serif;padding:0;transition:color 0.15s;">
+        ⚙️ Konfigurasi URL Apps Script
+      </button>
+    </div>
+
+    <!-- Config Panel (hidden by default) -->
+    <div class="config-panel" id="config-panel" style="display:none;">
+      <div class="config-title">⚙️ Konfigurasi Apps Script URL</div>
+      <div class="config-input-group">
+        <input type="text" id="script-url-input"
+               placeholder="Tempel URL deployment Google Apps Script di sini...">
+        <button class="config-btn" id="save-url-btn">Simpan & Aktifkan</button>
+      </div>
+      <div class="config-hint">
+        Masukkan URL deployment Google Apps Script agar data daftar hadir tersimpan ke Google Sheets.
+        Lihat <a href="tutorial.html">tutorial</a> untuk panduan langkah demi langkah.
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="alert-box" style="display:none;margin-bottom:18px;"></div>
+
+    <!-- Date Banner -->
+    <div class="date-banner" id="date-banner">
+      <span style="font-size:18px;">📅</span>
+      <span id="date-banner-text">Memuat tanggal...</span>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card" id="form-card">
+
+      <!-- ── Bagian 1: Identitas ── -->
+      <div class="form-section">
+        <div class="form-label-row">
+          <span class="section-number">1</span>
+          <label class="form-label" for="nama-input" style="margin-bottom:0;">
+            NIM / NIP / Nama Lengkap
+          </label>
+        </div>
+        <span class="form-label-hint">
+          Mahasiswa isi NIM · Pegawai isi NIP · Tamu isi nama lengkap
+        </span>
+        <input
+          type="text"
+          id="nama-input"
+          class="form-input"
+          placeholder="Contoh: 4101234567 &nbsp;|&nbsp; 197001012000011001 &nbsp;|&nbsp; Budi Santoso"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <!-- Category preview badge -->
+        <div id="category-preview" style="margin-top:8px;display:none;">
+          <span id="category-badge" style="
+            display:inline-flex;align-items:center;gap:5px;
+            padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
+          </span>
+        </div>
+      </div>
+
+      <hr class="form-divider">
+
+      <!-- ── Bagian 2: Tujuan ── -->
+      <div class="form-section">
+        <div class="form-label-row">
+          <span class="section-number">2</span>
+          <label class="form-label" style="margin-bottom:0;">Tujuan Berkunjung</label>
+        </div>
+        <span class="form-label-hint">Pilih satu atau beberapa tujuan kunjungan Anda</span>
+
+        <div class="purpose-grid" id="purpose-grid">
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Meminjam/Mengembalikan Buku">
+            <span>📚 Meminjam/Mengembalikan Buku</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Mengunjungi Ruang Baca dan Referensi">
+            <span>🔍 Ruang Baca &amp; Referensi</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Diskusi Kelompok">
+            <span>👥 Diskusi Kelompok</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Belajar Mandiri">
+            <span>💡 Belajar Mandiri</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Mengakses Layanan Data (LSEG)">
+            <span>📈 Layanan Data (LSEG)</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Mengakses Layanan E-Journal">
+            <span>📰 Layanan E-Journal</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Mengakses Karya Tulis / Repositori">
+            <span>🗄️ Karya Tulis / Repositori</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Healing / Rehat">
+            <span>🌿 Healing / Rehat</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Rapat">
+            <span>🤝 Rapat</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Bimbingan dengan Dosen">
+            <span>🎓 Bimbingan dengan Dosen</span>
+          </label>
+          <label class="purpose-chip">
+            <input type="checkbox" name="tujuan" value="Lainnya">
+            <span>✏️ Lainnya</span>
+          </label>
+        </div>
+      </div>
+
+      <hr class="form-divider">
+
+      <!-- ── Bagian 3: Durasi ── -->
+      <div class="form-section">
+        <div class="form-label-row">
+          <span class="section-number">3</span>
+          <label class="form-label" style="margin-bottom:0;">Estimasi Durasi Kunjungan</label>
+        </div>
+        <span class="form-label-hint">Pilih perkiraan lama waktu Anda di perpustakaan</span>
+
+        <div class="duration-grid">
+          <label class="duration-card">
+            <input type="radio" name="durasi" value="Kurang dari 1 jam">
+            <div class="duration-card-inner">
+              <div class="duration-icon">⚡</div>
+              <div class="duration-label">Kurang dari 1 Jam</div>
+            </div>
+          </label>
+          <label class="duration-card">
+            <input type="radio" name="durasi" value="1-2 jam">
+            <div class="duration-card-inner">
+              <div class="duration-icon">🕐</div>
+              <div class="duration-label">1 – 2 Jam</div>
+            </div>
+          </label>
+          <label class="duration-card">
+            <input type="radio" name="durasi" value="2-3 jam">
+            <div class="duration-card-inner">
+              <div class="duration-icon">🕑</div>
+              <div class="duration-label">2 – 3 Jam</div>
+            </div>
+          </label>
+          <label class="duration-card">
+            <input type="radio" name="durasi" value="Lebih dari 3 jam">
+            <div class="duration-card-inner">
+              <div class="duration-icon">🕓</div>
+              <div class="duration-label">Lebih dari 3 Jam</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── Submit ── -->
+      <div class="form-section">
+        <button class="submit-btn" id="submit-btn">✅ Kirim Daftar Hadir</button>
+      </div>
+
+    </div><!-- end .form-card -->
+  </main>
+</div>
+
+<script src="js/daftar-hadir.js"></script>
+</body>
+</html>
