@@ -4,8 +4,15 @@
 // ============================================
 
 const STORAGE_KEY = 'kunjungan_apps_script_url';
-const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXCIpXibwgkY0JOjUGaBXIqVs81gf77wGTgR9QlOYyI8ClxsJN-_4lAkkGRoxDqCZ6pw/exec';
-let appsScriptUrl = localStorage.getItem(STORAGE_KEY) || DEFAULT_APPS_SCRIPT_URL;
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwcMXkTpWrZPigxX6bugFHiQUFUkxRDLJBtwppjkYzKgIm8dN11XY5EIpAqXfSk6_i1-Q/exec';
+const OLD_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXCIpXibwgkY0JOjUGaBXIqVs81gf77wGTgR9QlOYyI8ClxsJN-_4lAkkGRoxDqCZ6pw/exec';
+
+let localUrl = localStorage.getItem(STORAGE_KEY);
+if (localUrl === OLD_APPS_SCRIPT_URL) {
+  localStorage.removeItem(STORAGE_KEY);
+  localUrl = null;
+}
+let appsScriptUrl = localUrl || DEFAULT_APPS_SCRIPT_URL;
 let allData       = [];
 let charts        = {};
 let currentPeriod = 'bulanan';
