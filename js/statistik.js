@@ -447,3 +447,106 @@ function renderPurposeChart() {
     }
   });
 }
+
+/* ── Today's Visitors Modal Logic ── */
+function openTodayVisitorsModal() {
+  const modal = document.getElementById('visitors-modal');
+  const tbody = document.getElementById('visitors-list');
+  if (!modal || !tbody) return;
+
+  // Clear previous rows
+  tbody.innerHTML = '';
+
+  // Filter today's visitors
+  const todayStr = new Date().toDateString();
+  const todayVisitors = allData.filter(d => {
+    try { return d.timestamp && new Date(d.timestamp).toDateString() === todayStr; }
+    catch { return false; }
+  });
+
+  // Sort today's visitors by timestamp descending (newest first)
+  todayVisitors.sort((a, b) => {
+    try { return new Date(b.timestamp) - new Date(a.timestamp); }
+    catch { return 0; }
+  });
+
+  if (todayVisitors.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5">
+          <div class="empty-modal-state">
+            <div class="empty-modal-icon">👥</div>
+            <div style="font-weight:600; color:var(--text-primary);">Belum ada kunjungan hari ini</div>
+            <div style="font-size:12px; margin-top:4px; color:var(--text-muted);">Data pengunjung hari ini akan muncul di sini setelah mengisi daftar hadir.</div>
+          </div>
+        </td>
+      </tr>
+    `;
+  } else {
+    todayVisitors.forEach(d => {
+      const timeVal = formatTime(d.timestamp);
+      const cat = detectCategory(d.nama);
+      const catClass = cat.toLowerCase();
+      const badgeEmoji = cat === 'Mahasiswa' ? '🎓' : cat === 'Pegawai' ? '🏛️' : '👤';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600; color:var(--text-secondary); font-variant-numeric: tabular-nums;">${timeVal}</td>
+        <td>
+          <div style="font-weight:600; color:var(--text-primary);">${d.nama}</div>
+        </td>
+        <td>
+          <span class="badge ${catClass}">${badgeEmoji} ${cat}</span>
+        </td>
+        <td>
+          <div style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px;" title="${d.tujuan || ''}">
+            ${(d.tujuan || '–').replace(/ \| /g, ', ')}
+          </div>
+        </td>
+        <td style="color:var(--text-secondary); font-size:13px;">${d.durasi || '–'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // prevent background scrolling
+}
+
+window.closeModal = function() {
+  const modal = document.getElementById('visitors-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = ''; // restore background scrolling
+  }
+}
+
+window.openTodayVisitorsModal = openTodayVisitorsModal;
+
+function formatTime(timestamp) {
+  try {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return '–';
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  } catch (e) {
+    return '–';
+  }
+}
+
+// Close on escape key and outside click
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('visitors-modal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+});
