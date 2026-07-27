@@ -40,14 +40,14 @@ const DURASI_ORDER = [
 ];
 
 const CHART_COLORS = {
-  sky:    'rgba(14,165,233,',
-  blue:   'rgba(59,130,246,',
-  cyan:   'rgba(6,182,212,',
+  sky:    'rgba(234,97,24,',
+  blue:   'rgba(249,115,22,',
+  cyan:   'rgba(251,146,60,',
   green:  'rgba(5,150,105,',
-  amber:  'rgba(217,119,6,',
+  amber:  'rgba(245,158,11,',
   purple: 'rgba(124,58,237,',
   rose:   'rgba(225,29,72,',
-  slate:  'rgba(148,163,184,',
+  slate:  'rgba(180,140,110,',
 };
 
 /* ──────────────────────────────── */
@@ -105,6 +105,7 @@ function initPeriodTabs() {
 function showLoading() {
   document.getElementById('loading').style.display        = 'flex';
   document.getElementById('empty-state').style.display   = 'none';
+  document.getElementById('daily-section').style.display = 'none';
   document.getElementById('stats-section').style.display = 'none';
   document.getElementById('period-section').style.display= 'none';
   document.getElementById('charts-section').style.display= 'none';
@@ -114,6 +115,7 @@ function showEmpty(msg) {
   document.getElementById('loading').style.display        = 'none';
   document.getElementById('empty-state').style.display   = 'flex';
   document.getElementById('empty-desc').textContent      = msg;
+  document.getElementById('daily-section').style.display = 'none';
   document.getElementById('stats-section').style.display = 'none';
   document.getElementById('period-section').style.display= 'none';
   document.getElementById('charts-section').style.display= 'none';
@@ -122,6 +124,7 @@ function showEmpty(msg) {
 function showDashboard() {
   document.getElementById('loading').style.display        = 'none';
   document.getElementById('empty-state').style.display   = 'none';
+  document.getElementById('daily-section').style.display = 'block';
   document.getElementById('stats-section').style.display = 'grid';
   document.getElementById('period-section').style.display= 'flex';
   document.getElementById('charts-section').style.display= 'grid';
@@ -195,6 +198,10 @@ function renderDashboard() {
   renderCategoryChart();
   renderDurationChart();
   renderPurposeChart();
+  // Tren Harian: isi dropdown & render bulan terbaru
+  populateDailyMonthDropdown();
+  const sel = document.getElementById('daily-month-select');
+  if (sel && sel.value) renderDailyChart(sel.value);
   showDashboard();
 }
 
@@ -268,14 +275,15 @@ function groupByPeriod(data, period) {
       if (isNaN(date)) return;
       let key;
       if (period === 'harian') {
-        key = date.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+        // Per hari: dd Mmm yyyy
+        key = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
       } else if (period === 'mingguan') {
         const dow = date.getDay();  // 0=Sun
         const monday = new Date(date);
         monday.setDate(date.getDate() - ((dow + 6) % 7));
-        key = 'Minggu ' + monday.toLocaleDateString('id-ID', { day:'2-digit', month:'short' });
+        key = 'Minggu ' + monday.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
       } else {
-        key = date.toLocaleDateString('id-ID', { month:'short', year:'numeric' });
+        key = date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
       }
       groups[key] = (groups[key] || 0) + 1;
     } catch { /* skip */ }
@@ -283,11 +291,20 @@ function groupByPeriod(data, period) {
   return groups;
 }
 
-/* ── Chart: Trend ── */
+/* ── Chart: Trend (Mingguan / Bulanan) ── */
 function renderTrendChart() {
   const groups = groupByPeriod(allData, currentPeriod);
   const labels = Object.keys(groups);
   const values = Object.values(groups);
+
+  // Subtitle dinamis sesuai period
+  const subtitleMap = {
+    harian:   'Jumlah pengunjung per hari',
+    mingguan: 'Jumlah pengunjung per minggu',
+    bulanan:  'Jumlah pengunjung per bulan',
+  };
+  const subtitleEl = document.querySelector('#charts-section .chart-card.full-width .chart-subtitle');
+  if (subtitleEl) subtitleEl.textContent = subtitleMap[currentPeriod] || 'Jumlah pengunjung per periode waktu';
 
   const ctx = document.getElementById('chart-trend').getContext('2d');
   charts.trend = new Chart(ctx, {
@@ -297,7 +314,7 @@ function renderTrendChart() {
       datasets: [{
         label: 'Jumlah Kunjungan',
         data: values,
-        backgroundColor: CHART_COLORS.sky + '0.18)',
+        backgroundColor: CHART_COLORS.sky + '0.20)',
         borderColor:     CHART_COLORS.sky + '1)',
         borderWidth: 2,
         borderRadius: 8,
@@ -311,10 +328,20 @@ function renderTrendChart() {
         tooltip: { callbacks: { label: ctx => ` ${ctx.raw} kunjungan` } }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color:'#6b8299', font:{ family:'Inter', size:11 } } },
-        y: { beginAtZero: true,
-             grid: { color:'rgba(14,165,233,0.07)' },
-             ticks: { color:'#6b8299', font:{ family:'Inter', size:11 }, stepSize:1, precision:0 } }
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#9a6a42',
+            font: { family: 'Inter', size: 11 },
+            maxRotation: 45,
+            minRotation: 0,
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(234,97,24,0.07)' },
+          ticks: { color: '#9a6a42', font: { family: 'Inter', size: 11 }, stepSize: 1, precision: 0 }
+        }
       }
     }
   });
@@ -323,6 +350,142 @@ function renderTrendChart() {
 function rebuildTrendChart() {
   if (charts.trend) { charts.trend.destroy(); delete charts.trend; }
   renderTrendChart();
+}
+
+/* ── Chart: Tren Harian per Bulan ── */
+function populateDailyMonthDropdown() {
+  // Kumpulkan semua bulan unik dari data (format: YYYY-MM)
+  const monthSet = new Set();
+  allData.forEach(d => {
+    try {
+      if (!d.timestamp) return;
+      const date = new Date(d.timestamp);
+      if (isNaN(date)) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthSet.add(key);
+    } catch { /* skip */ }
+  });
+
+  // Sort descending (terbaru di atas)
+  const months = Array.from(monthSet).sort().reverse();
+  const select = document.getElementById('daily-month-select');
+  if (!select) return;
+
+  select.innerHTML = '';
+  months.forEach(m => {
+    const [y, mo] = m.split('-');
+    const label = new Date(+y, +mo - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = label;
+    select.appendChild(opt);
+  });
+
+  // Default: bulan terbaru
+  if (months.length > 0) select.value = months[0];
+}
+
+function renderDailyChart(yearMonth) {
+  // yearMonth = 'YYYY-MM'
+  if (!yearMonth) return;
+  const [y, mo] = yearMonth.split('-').map(Number);
+
+  // Tentukan jumlah hari dalam bulan tsb
+  const daysInMonth = new Date(y, mo, 0).getDate();
+
+  // Gunakan ARRAY (bukan object) agar urutan 01→02→...→31 selalu terjaga
+  // Array index 0 = hari ke-1, index 1 = hari ke-2, dst.
+  const labels = [];
+  const values = new Array(daysInMonth).fill(0);
+  for (let d = 1; d <= daysInMonth; d++) {
+    labels.push(String(d).padStart(2, '0'));
+  }
+
+  allData.forEach(d => {
+    try {
+      if (!d.timestamp) return;
+      const date = new Date(d.timestamp);
+      if (isNaN(date)) return;
+      if (date.getFullYear() !== y || date.getMonth() + 1 !== mo) return;
+      const dayIndex = date.getDate() - 1; // 0-based
+      if (dayIndex >= 0 && dayIndex < daysInMonth) values[dayIndex]++;
+    } catch { /* skip */ }
+  });
+
+
+  // Update summary badge
+  const totalMonth = values.reduce((s, v) => s + v, 0);
+  const activeDays = values.filter(v => v > 0).length;
+  const peakDay    = labels[values.indexOf(Math.max(...values))];
+  const peakVal    = Math.max(...values);
+
+  const summaryEl = document.getElementById('daily-summary');
+  if (summaryEl) {
+    const [fy, fmo] = yearMonth.split('-').map(Number);
+    const monthName = new Date(fy, fmo - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    summaryEl.innerHTML = `
+      <span class="daily-badge">📅 ${monthName}</span>
+      <span class="daily-badge">👥 ${totalMonth.toLocaleString('id-ID')} total kunjungan</span>
+      <span class="daily-badge">📆 ${activeDays} hari aktif</span>
+      ${peakVal > 0 ? `<span class="daily-badge">🏆 Tertinggi: ${peakVal} pengunjung (tgl ${peakDay})</span>` : ''}
+    `;
+  }
+
+  // Warna bar: tinggi = oranye solid, nol = abu transparan
+  const maxVal = Math.max(...values, 1);
+  const bgColors = values.map(v =>
+    v === 0
+      ? 'rgba(200,180,170,0.20)'
+      : `rgba(234,97,24,${(0.25 + 0.75 * (v / maxVal)).toFixed(2)})`
+  );
+  const borderColors = values.map(v =>
+    v === 0 ? 'rgba(200,180,170,0.30)' : 'rgba(234,97,24,1)'
+  );
+
+  if (charts.daily) { charts.daily.destroy(); delete charts.daily; }
+  const ctx = document.getElementById('chart-daily').getContext('2d');
+  charts.daily = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Kunjungan',
+        data: values,
+        backgroundColor: bgColors,
+        borderColor: borderColors,
+        borderWidth: 1.5,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => {
+              const [fy2, fmo2] = yearMonth.split('-').map(Number);
+              const mn = new Date(fy2, fmo2 - 1, 1).toLocaleDateString('id-ID', { month: 'long' });
+              return `${items[0].label} ${mn} ${fy2}`;
+            },
+            label: ctx => ` ${ctx.raw} kunjungan`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#9a6a42', font: { family: 'Inter', size: 11 } }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(234,97,24,0.07)' },
+          ticks: { color: '#9a6a42', font: { family: 'Inter', size: 11 }, stepSize: 1, precision: 0 }
+        }
+      }
+    }
+  });
 }
 
 /* ── Chart: Category (Doughnut) ── */
@@ -557,3 +720,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Expose ke global scope untuk onchange HTML
+window.renderDailyChart = renderDailyChart;
+
