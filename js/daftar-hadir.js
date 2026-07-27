@@ -65,24 +65,27 @@ function initDateTime() {
   setInterval(tick, 1000);
 }
 
-/* ── Config Panel ── */
+/* ── Config Panel (disabled — elemen sudah dihapus dari HTML) ── */
 function initConfig() {
-  const urlInput = document.getElementById('script-url-input');
+  const urlInput  = document.getElementById('script-url-input');
+  const saveBtn   = document.getElementById('save-url-btn');
   if (urlInput && appsScriptUrl) urlInput.value = appsScriptUrl;
-
-  document.getElementById('save-url-btn').addEventListener('click', function () {
-    const url = (urlInput ? urlInput.value : '').trim();
-    if (!url) { showAlert('Masukkan URL Apps Script terlebih dahulu.', 'error'); return; }
-    appsScriptUrl = url;
-    localStorage.setItem(STORAGE_KEY, url);
-    document.getElementById('config-panel').style.display = 'none';
-    showAlert('✅ URL berhasil disimpan! Form siap digunakan.', 'success');
-  });
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function () {
+      const url = (urlInput ? urlInput.value : '').trim();
+      if (!url) { showAlert('Masukkan URL Apps Script terlebih dahulu.', 'error'); return; }
+      appsScriptUrl = url;
+      localStorage.setItem(STORAGE_KEY, url);
+      const panel = document.getElementById('config-panel');
+      if (panel) panel.style.display = 'none';
+      showAlert('✅ URL berhasil disimpan! Form siap digunakan.', 'success');
+    });
+  }
 }
 
 function toggleConfig() {
   const panel = document.getElementById('config-panel');
-  panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+  if (panel) panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
 }
 
 /* ── Category Preview (live while typing) ── */
@@ -146,8 +149,7 @@ async function handleSubmit() {
   }
 
   if (!appsScriptUrl) {
-    showAlert('⚙️ URL Apps Script belum dikonfigurasi. Klik tombol konfigurasi di atas.', 'error');
-    document.getElementById('config-panel').style.display = 'block';
+    showAlert('⚠️ Sistem tidak terkonfigurasi. Hubungi pengelola perpustakaan.', 'error');
     return;
   }
 
