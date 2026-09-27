@@ -102,9 +102,9 @@ function initCategoryPreview() {
 
     const cat = detectCategory(val);
     const cfg = {
-      'Mahasiswa': { emoji: '🎓', color: '#0ea5e9', bg: 'rgba(14,165,233,0.10)' },
-      'Pegawai'  : { emoji: '🏛️', color: '#3b82f6', bg: 'rgba(59,130,246,0.10)' },
-      'Tamu'     : { emoji: '👤', color: '#059669', bg: 'rgba(5,150,105,0.10)'  },
+      'Mahasiswa': { emoji: '🎓', color: '#6d28d9', bg: 'rgba(109,40,217,0.10)' },
+      'Pegawai'  : { emoji: '🏛️', color: '#0f766e', bg: 'rgba(15,118,110,0.10)' },
+      'Tamu'     : { emoji: '👤', color: '#7c3aed', bg: 'rgba(124,58,237,0.10)' },
     }[cat];
 
     badge.textContent = `${cfg.emoji} Terdeteksi sebagai: ${cat}`;
@@ -156,7 +156,7 @@ async function handleSubmit() {
   /* ── Send Data ── */
   const btn = document.getElementById('submit-btn');
   btn.disabled    = true;
-  btn.textContent = '⏳ Mengirim data...';
+  btn.textContent = 'Menyimpan kehadiran...';
 
   const formData = new FormData();
   formData.append('nama',   nama);
@@ -170,21 +170,22 @@ async function handleSubmit() {
   } catch (err) {
     showAlert('Gagal mengirim data. Periksa koneksi internet dan URL Apps Script.', 'error');
     btn.disabled    = false;
-    btn.textContent = '✅ Kirim Daftar Hadir';
+    btn.textContent = 'Simpan Kehadiran';
   }
 }
 
 function onSubmitSuccess(nama) {
+  try { localStorage.setItem('kunjungan_stats_revision', String(Date.now())); } catch (_) {}
   const category = detectCategory(nama);
   const label    = (category === 'Tamu') ? nama : category;
   showAlert(
-    `✅ Terima kasih, ${label}! Daftar hadir Anda berhasil dicatat. Selamat menggunakan fasilitas perpustakaan.`,
+    `Terima kasih, ${label}! Daftar hadirmu sudah dikirim. Selamat menikmati waktu di perpus!`,
     'success'
   );
   // Update aside counter
   document.dispatchEvent(new CustomEvent('kunjungan:submit-success'));
   resetForm();
-  document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('alert-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function resetForm() {
@@ -194,7 +195,7 @@ function resetForm() {
   document.querySelectorAll('input[name="durasi"]').forEach(rb => rb.checked = false);
   const btn = document.getElementById('submit-btn');
   btn.disabled    = false;
-  btn.textContent = '✅ Kirim Daftar Hadir';
+  btn.textContent = 'Simpan Kehadiran';
 }
 
 /* ── Alert Helpers ── */
@@ -202,7 +203,7 @@ function showAlert(message, type) {
   const el = document.getElementById('alert-box');
   el.className   = `alert-box ${type}`;
   el.style.display = 'flex';
-  el.innerHTML   = message;
+  el.textContent = message;
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 

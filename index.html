@@ -22,7 +22,7 @@
       color: white; border-radius: 50%;
       font-size: 11px; font-weight: 700;
       margin-right: 8px; flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(234,97,24,0.38);
+      box-shadow: 0 2px 8px rgba(109,40,217, 0.35);
     }
     .form-label-row {
       display: flex;
@@ -50,7 +50,7 @@
       position: relative;
       overflow: hidden;
       animation: fadeInUp 0.5s ease both;
-      box-shadow: 0 8px 32px rgba(234,97,24,0.32);
+      box-shadow: 0 8px 32px rgba(109,40,217, 0.28);
     }
     .aside-welcome::before {
       content: '';
@@ -125,16 +125,16 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 18px; flex-shrink: 0;
     }
-    .aside-card-icon.sky    { background: rgba(234,97,24,0.12); }
-    .aside-card-icon.emerald{ background: rgba(5,150,105,0.12); }
-    .aside-card-icon.amber  { background: rgba(245,158,11,0.12); }
-    .aside-card-icon.purple { background: rgba(124,58,237,0.12); }
+    .aside-card-icon.sky    { background: rgba(109,40,217, 0.12); color: #6d28d9; }
+    .aside-card-icon.emerald{ background: rgba(16, 185, 129, 0.12); color: #059669; }
+    .aside-card-icon.amber  { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+    .aside-card-icon.purple { background: rgba(139, 92, 246, 0.12); color: #7c3aed; }
     .aside-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
 
     .aside-info-row {
       display: flex; align-items: center; justify-content: space-between;
       padding: 7px 0;
-      border-bottom: 1px solid rgba(234,97,24,0.08);
+      border-bottom: 1px solid rgba(124,58,237, 0.08);
       font-size: 12.5px;
     }
     .aside-info-row:last-child { border-bottom: none; padding-bottom: 0; }
@@ -155,7 +155,7 @@
       align-items: flex-start;
       justify-content: space-between;
       padding-bottom: 10px;
-      border-bottom: 1px solid rgba(234,97,24,0.09);
+      border-bottom: 1px solid rgba(124,58,237, 0.08);
       gap: 12px;
     }
     .room-status-item:last-child {
@@ -286,11 +286,11 @@
     <nav class="sidebar-nav">
       <div class="nav-section-label">Menu Utama</div>
       <a href="index.html" class="nav-item active">
-        <span class="nav-icon">📋</span>
+        <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m8 13 3 3 5-6"/></svg></span>
         <span>Daftar Hadir</span>
       </a>
       <a href="statistik.html" class="nav-item">
-        <span class="nav-icon">📊</span>
+        <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v17h17M8 15v-4m5 4V7m5 8V4"/></svg></span>
         <span>Statistik Kunjungan</span>
       </a>
 
@@ -314,24 +314,26 @@
 
         <!-- Page Header -->
         <div class="page-header">
-          <h1>Daftar Hadir Kunjungan</h1>
-          <p class="page-description">Silakan isi formulir berikut sebelum menggunakan fasilitas perpustakaan.</p>
+          <span class="page-eyebrow">SELAMAT DATANG DI PERPUSTAKAAN PKN STAN</span>
+          <h1 class="greeting-title">Hai, Sobat Perpus <span class="greeting-emojis" aria-hidden="true"><span class="greeting-book">📚</span><span class="greeting-sparkle">✨</span></span></h1>
+          <p class="page-description">Mau belajar, diskusi, atau rehat? Isi daftar hadir dulu, ya.</p>
         </div>
 
 
 
         <!-- Alert Box -->
-        <div id="alert-box" style="display:none;margin-bottom:18px;"></div>
+        <div id="alert-box" role="status" aria-live="polite" aria-atomic="true" style="display:none;margin-bottom:18px;"></div>
 
 
         <!-- Date Banner -->
         <div class="date-banner" id="date-banner" style="margin-bottom:20px;">
-          <span style="font-size:18px;">📅</span>
+          <span style="font-size:18px;"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/></svg></span>
           <span id="date-banner-text">Memuat tanggal...</span>
         </div>
 
         <!-- Form Card -->
         <div class="form-card" id="form-card">
+          <div class="form-intro"><div><h2>Daftar hadir</h2><p>Tiga langkah singkat sebelum mulai aktivitasmu.</p></div><span class="form-intro-badge">Identitas · Tujuan · Durasi</span></div>
 
           <!-- ── Bagian 1: Identitas ── -->
           <div class="form-section">
@@ -369,52 +371,52 @@
               <span class="section-number">2</span>
               <label class="form-label" style="margin-bottom:0;">Tujuan Berkunjung</label>
             </div>
-            <span class="form-label-hint">Pilih satu atau beberapa tujuan kunjungan Anda</span>
+            <span class="form-label-hint">Kamu boleh memilih lebih dari satu aktivitas</span>
 
             <div class="purpose-grid" id="purpose-grid">
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Meminjam/Mengembalikan Buku">
-                <span>📚 Meminjam/Mengembalikan Buku</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2z"/></svg> Meminjam/Mengembalikan Buku</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Mengunjungi Ruang Baca dan Referensi">
-                <span>🔍 Ruang Baca &amp; Referensi</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg> Ruang Baca &amp; Referensi</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Diskusi Kelompok">
-                <span>👥 Diskusi Kelompok</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-16a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v2"/></svg> Diskusi Kelompok</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Belajar Mandiri">
-                <span>💡 Belajar Mandiri</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0l-1 2H9z"/></svg> Belajar Mandiri</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Mengakses Layanan Data (LSEG)">
-                <span>📈 Layanan Data (LSEG)</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3v17h17M8 15v-4m5 4V7m5 8V4"/></svg> Layanan Data (LSEG)</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Mengakses Layanan E-Journal">
-                <span>📰 Layanan E-Journal</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7zM14 2v5h5M8 12h8m-8 4h8"/></svg> Layanan E-Journal</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Mengakses Karya Tulis / Repositori">
-                <span>🗄️ Karya Tulis / Repositori</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7zM14 2v5h5M8 12h8m-8 4h8"/></svg> Karya Tulis / Repositori</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Healing / Rehat">
-                <span>🌿 Healing / Rehat</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 3C8 2 2 8 5 15s17 6 15-12ZM4 21 15 10"/></svg> Healing / Rehat</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Rapat">
-                <span>🤝 Rapat</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-16a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v2"/></svg> Rapat</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Bimbingan dengan Dosen">
-                <span>🎓 Bimbingan dengan Dosen</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5zM6 11v6c4 3 8 3 12 0v-6m4-2v8"/></svg> Bimbingan dengan Dosen</span>
               </label>
               <label class="purpose-chip">
                 <input type="checkbox" name="tujuan" value="Lainnya">
-                <span>✏️ Lainnya</span>
+                <span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L21 7l-5-5L4 14z"/></svg> Lainnya</span>
               </label>
             </div>
           </div>
@@ -427,34 +429,34 @@
               <span class="section-number">3</span>
               <label class="form-label" style="margin-bottom:0;">Estimasi Durasi Kunjungan</label>
             </div>
-            <span class="form-label-hint">Pilih perkiraan lama waktu Anda di perpustakaan</span>
+            <span class="form-label-hint">Kira-kira berapa lama kamu akan di sini?</span>
 
             <div class="duration-grid">
               <label class="duration-card">
                 <input type="radio" name="durasi" value="Kurang dari 1 jam">
                 <div class="duration-card-inner">
-                  <div class="duration-icon">⚡</div>
+                  <div class="duration-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                   <div class="duration-label">Kurang dari 1 Jam</div>
                 </div>
               </label>
               <label class="duration-card">
                 <input type="radio" name="durasi" value="1-2 jam">
                 <div class="duration-card-inner">
-                  <div class="duration-icon">🕐</div>
+                  <div class="duration-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                   <div class="duration-label">1 – 2 Jam</div>
                 </div>
               </label>
               <label class="duration-card">
                 <input type="radio" name="durasi" value="2-3 jam">
                 <div class="duration-card-inner">
-                  <div class="duration-icon">🕑</div>
+                  <div class="duration-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                   <div class="duration-label">2 – 3 Jam</div>
                 </div>
               </label>
               <label class="duration-card">
                 <input type="radio" name="durasi" value="Lebih dari 3 jam">
                 <div class="duration-card-inner">
-                  <div class="duration-icon">🕓</div>
+                  <div class="duration-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
                   <div class="duration-label">Lebih dari 3 Jam</div>
                 </div>
               </label>
@@ -463,7 +465,7 @@
 
           <!-- ── Submit ── -->
           <div class="form-section">
-            <button class="submit-btn" id="submit-btn">✅ Kirim Daftar Hadir</button>
+            <button class="submit-btn" id="submit-btn">Simpan Kehadiran</button>
           </div>
 
         </div><!-- end .form-card -->
@@ -475,16 +477,16 @@
         <!-- Welcome Card -->
         <div class="aside-welcome">
           <div class="live-badge">
-            <span class="live-dot"></span> Sistem Aktif
+            <span class="live-dot"></span> Ruang untuk bertumbuh
           </div>
           <img src="logo-perpus.png" alt="Logo Perpustakaan PKN STAN" class="aside-logo">
           <div class="aside-welcome-title">Perpustakaan PKN STAN</div>
-          <div class="aside-welcome-sub">Dashboard Kunjungan Digital</div>
+          <div class="aside-welcome-sub">Belajar nyaman, ide terus berjalan.</div>
           <hr class="aside-welcome-divider">
           <div class="aside-stat-row">
             <div class="aside-stat-item">
               <div class="aside-stat-num" id="aside-today">–</div>
-              <div class="aside-stat-lbl">Hari Ini</div>
+              <div class="aside-stat-lbl">Kehadiran di perangkat ini</div>
             </div>
             <div class="aside-stat-item" style="border-left:1px solid rgba(255,255,255,0.20);padding-left:24px;">
               <div class="aside-stat-num" id="aside-time-display">–</div>
@@ -496,7 +498,7 @@
         <!-- Jam Layanan -->
         <div class="aside-card" style="animation-delay:0.1s;">
           <div class="aside-card-header">
-            <div class="aside-card-icon sky">🕐</div>
+            <div class="aside-card-icon sky"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
             <div class="aside-card-title">Jam Layanan</div>
           </div>
           <div class="room-status-list">
@@ -546,28 +548,28 @@
 
 
         <!-- Fasilitas -->
-        <div class="aside-card" style="animation-delay:0.3s;">
-          <div class="aside-card-header">
-            <div class="aside-card-icon purple">🏛️</div>
+        <details class="aside-card facilities-card" style="animation-delay:0.3s;">
+          <summary class="aside-card-header">
+            <div class="aside-card-icon purple"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-5 9 5H3Zm2 3v8m7-8v8m7-8v8M3 21h18"/></svg></div>
             <div class="aside-card-title">Fasilitas Tersedia</div>
           </div>
           <div class="aside-info-row">
-            <span class="lbl">📚 Koleksi Buku</span>
+            <span class="lbl"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2z"/></svg> Koleksi Buku</span>
             <span class="val">Tersedia</span>
           </div>
           <div class="aside-info-row">
-            <span class="lbl">💻 Ruang Komputer</span>
+            <span class="lbl"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg> Ruang Komputer</span>
             <span class="val">Tersedia</span>
           </div>
           <div class="aside-info-row">
-            <span class="lbl">📡 WiFi Gratis</span>
+            <span class="lbl"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0m-10 4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r="1"/></svg> WiFi Gratis</span>
             <span class="val open">Aktif</span>
           </div>
           <div class="aside-info-row">
-            <span class="lbl">🗂️ Repositori Digital</span>
+            <span class="lbl"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7zM14 2v5h5M8 12h8m-8 4h8"/></svg> Repositori Digital</span>
             <span class="val">Tersedia</span>
           </div>
-        </div>
+        </details>
 
       </div><!-- end .aside-col -->
     </div><!-- end .form-layout -->

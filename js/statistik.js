@@ -40,14 +40,14 @@ const DURASI_ORDER = [
 ];
 
 const CHART_COLORS = {
-  sky:    'rgba(234,97,24,',
-  blue:   'rgba(249,115,22,',
-  cyan:   'rgba(251,146,60,',
-  green:  'rgba(5,150,105,',
+  sky:    'rgba(109,40,217,',
+  blue:   'rgba(2,132,199,',
+  cyan:   'rgba(15,118,110,',
+  green:  'rgba(16,185,129,',
   amber:  'rgba(245,158,11,',
-  purple: 'rgba(124,58,237,',
-  rose:   'rgba(225,29,72,',
-  slate:  'rgba(180,140,110,',
+  purple: 'rgba(139,92,246,',
+  rose:   'rgba(244,63,94,',
+  slate:  'rgba(100,116,139,',
 };
 
 /* ──────────────────────────────── */
@@ -131,67 +131,160 @@ function showDashboard() {
   document.getElementById('refresh-btn').style.display   = 'flex';
 }
 
-/* ── JSONP fetch (bypass CORS untuk file:// protocol) ── */
-function fetchJsonp(url) {
-  return new Promise(function (resolve, reject) {
-    var callbackName = 'jsonpCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
-    var script = document.createElement('script');
-    var done   = false;
+/* Short-lived, per-tab cache. Never persist visitor records in localStorage. */
+const STATS_CACHE_KEY = 'kunjungan_stats_session_v1';
+const CACHE_FRESH_MS = 30000;
+const CACHE_MAX_MS = 5 * 60000;
+let activeRequest = null;
+let requestSequence = 0;
+let displayedSource = null;
+let displayedSignature = null;
+let chartLibraryPromise = null;
 
-    var cleanup = function () {
-      if (script.parentNode) script.parentNode.removeChild(script);
-      delete window[callbackName];
-    };
+function statsRevision() {
+  try { return localStorage.getItem('kunjungan_stats_revision') || ''; } catch (_) { return ''; }
+}
 
-    window[callbackName] = function (data) {
-      done = true;
-      cleanup();
-      resolve(data);
-    };
+function readStatsCache(source) {
+  try {
+    const cache = JSON.parse(sessionStorage.getItem(STATS_CACHE_KEY));
+    if (!cache || cache.source !== source || !Array.isArray(cache.data) ||
+        !Number.isFinite(cache.savedAt) || Date.now() - cache.savedAt < 0 ||
+        Date.now() - cache.savedAt > CACHE_MAX_MS) return null;
+    if (!cache.data.every(d => d && typeof d.nama === 'string')) return null;
+    return cache;
+  } catch (_) { return null; }
+}
 
-    script.src     = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-    script.onerror = function () {
+function setSyncStatus(message) {
+  const badge = document.getElementById('sync-badge');
+  const text = document.getElementById('sync-text');
+  if (badge) badge.style.display = 'inline-flex';
+  if (text) text.textContent = message;
+}
+
+function loadChartLibrary() {
+  if (typeof Chart !== 'undefined') return Promise.resolve();
+  if (chartLibraryPromise) return chartLibraryPromise;
+  chartLibraryPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const timer = setTimeout(() => finish(new Error('Grafik gagal dimuat')), 15000);
+    let done = false;
+    function finish(error) {
       if (done) return;
-      cleanup();
-      reject(new Error('JSONP request failed'));
-    };
-
+      done = true;
+      clearTimeout(timer);
+      script.onload = script.onerror = null;
+      if (error) { script.remove(); chartLibraryPromise = null; reject(error); }
+      else resolve();
+    }
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+    script.async = true;
+    script.onload = () => finish(typeof Chart === 'undefined' ? new Error('Grafik tidak tersedia') : null);
+    script.onerror = () => finish(new Error('Grafik gagal dimuat'));
     document.head.appendChild(script);
+  });
+  return chartLibraryPromise;
+}
 
-    // Timeout 15 detik
-    setTimeout(function () {
-      if (!done) {
-        cleanup();
-        reject(new Error('JSONP timeout'));
-      }
-    }, 15000);
+function fetchJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'jsonpCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const script = document.createElement('script');
+    let done = false;
+    const timer = setTimeout(() => finish(new Error('JSONP timeout')), 15000);
+    function finish(error, data) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      script.remove();
+      delete window[callbackName];
+      if (error) reject(error); else resolve(data);
+    }
+    window[callbackName] = data => finish(null, data);
+    script.onerror = () => finish(new Error('JSONP request failed'));
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+    document.head.appendChild(script);
   });
 }
 
-/* ── Fetch Data ── */
-async function fetchData() {
-  showLoading();
-  try {
-    const json = await fetchJsonp(`${appsScriptUrl}?action=getData`);
-
-    if (json.status === 'success' && Array.isArray(json.data)) {
-      allData = json.data.filter(d => d.nama); // exclude blank rows
-      if (allData.length === 0) {
-        showEmpty('Belum ada data kunjungan yang tercatat. Ajak pengunjung mengisi daftar hadir!');
-        return;
-      }
-      renderDashboard();
-    } else {
-      showEmpty('Gagal memuat data. Pastikan URL Apps Script sudah benar dan izin akses sudah diberikan.');
-    }
-  } catch (err) {
-    showEmpty('Tidak dapat terhubung ke Apps Script. Periksa URL dan koneksi internet Anda.');
+function displayStats(data, source) {
+  const signature = JSON.stringify(data);
+  if (source === displayedSource && signature === displayedSignature) return;
+  allData = data;
+  if (data.length) {
+    Chart.defaults.animation = false;
+    renderDashboard();
+  } else {
+    destroyAllCharts();
+    showEmpty('Belum ada data kunjungan yang tercatat. Ajak pengunjung mengisi daftar hadir!');
   }
+  displayedSource = source;
+  displayedSignature = signature;
+}
+
+/* Start data and chart downloads together; keep usable data visible on refresh. */
+function fetchData(force = false) {
+  const source = appsScriptUrl;
+  if (activeRequest && activeRequest.source === source && (!force || activeRequest.force)) {
+    return activeRequest.promise;
+  }
+  const sequence = ++requestSequence;
+  const revision = statsRevision();
+  const cache = readStatsCache(source);
+  const fresh = cache && cache.revision === revision && Date.now() - cache.savedAt < CACHE_FRESH_MS;
+  const chartReady = loadChartLibrary().then(() => null, error => error);
+  // Start the network request before awaiting cached rendering or the chart library.
+  const network = (!force && fresh) ? null : Promise.resolve().then(() => {
+    const endpoint = new URL(source);
+    endpoint.searchParams.set('action', 'getData');
+    if (force || (cache && cache.revision !== revision)) endpoint.searchParams.set('force', 'true');
+    return fetchJsonp(endpoint.href);
+  })
+    .then(json => ({json}), error => ({error}));
+  if (displayedSource !== source) showLoading();
+  setSyncStatus(cache ? 'Menampilkan data tersimpan…' : 'Memuat data kunjungan…');
+  const promise = (async () => {
+    try {
+      const chartError = await chartReady;
+      if (sequence !== requestSequence) return;
+      if (chartError) throw chartError;
+      if (cache) displayStats(cache.data, source);
+      if (!network) { setSyncStatus('Data terbaru · tersimpan sementara'); return; }
+      setSyncStatus('Memperbarui data…');
+      const response = await network;
+      if (sequence !== requestSequence) return;
+      if (response.error) throw response.error;
+      const json = response.json;
+      if (!json || json.status !== 'success' || !Array.isArray(json.data)) throw new Error('Respons tidak valid');
+      const data = json.data.filter(d => d && typeof d.nama === 'string' && d.nama.trim());
+      displayStats(data, source);
+      try {
+        sessionStorage.setItem(STATS_CACHE_KEY, JSON.stringify({source, data, revision, savedAt:Date.now()}));
+      } catch (_) { /* Storage can be unavailable or full; the dashboard remains usable. */ }
+      setSyncStatus('Diperbarui ' + new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}));
+    } catch (error) {
+      if (sequence !== requestSequence) return;
+      if (displayedSource === source) setSyncStatus('Pembaruan gagal · menampilkan data sebelumnya');
+      else {
+        showEmpty('Data atau grafik belum dapat dimuat. Periksa koneksi, lalu klik Muat Ulang.');
+        setSyncStatus('Gagal memuat');
+      }
+    } finally {
+      if (sequence === requestSequence) {
+        activeRequest = null;
+        document.getElementById('refresh-btn').style.display = 'flex';
+      }
+    }
+  })();
+  activeRequest = {source, force, promise};
+  return promise;
 }
 
 
 /* ── Render All ── */
 function renderDashboard() {
+  showDashboard();
   updateStatCards();
   destroyAllCharts();
   renderTrendChart();
@@ -268,6 +361,9 @@ function updateStatCards() {
 /* ── Group by Period ── */
 function groupByPeriod(data, period) {
   const groups = {};
+  const dayFormatter = new Intl.DateTimeFormat('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+  const weekFormatter = new Intl.DateTimeFormat('id-ID', { day:'2-digit', month:'short' });
+  const monthFormatter = new Intl.DateTimeFormat('id-ID', { month:'short', year:'numeric' });
   data.forEach(d => {
     try {
       if (!d.timestamp) return;
@@ -276,14 +372,14 @@ function groupByPeriod(data, period) {
       let key;
       if (period === 'harian') {
         // Per hari: dd Mmm yyyy
-        key = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        key = dayFormatter.format(date);
       } else if (period === 'mingguan') {
         const dow = date.getDay();  // 0=Sun
         const monday = new Date(date);
         monday.setDate(date.getDate() - ((dow + 6) % 7));
-        key = 'Minggu ' + monday.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+        key = 'Minggu ' + weekFormatter.format(monday);
       } else {
-        key = date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+        key = monthFormatter.format(date);
       }
       groups[key] = (groups[key] || 0) + 1;
     } catch { /* skip */ }
@@ -331,7 +427,7 @@ function renderTrendChart() {
         x: {
           grid: { display: false },
           ticks: {
-            color: '#9a6a42',
+            color: '#64748b',
             font: { family: 'Inter', size: 11 },
             maxRotation: 45,
             minRotation: 0,
@@ -339,8 +435,8 @@ function renderTrendChart() {
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(234,97,24,0.07)' },
-          ticks: { color: '#9a6a42', font: { family: 'Inter', size: 11 }, stepSize: 1, precision: 0 }
+          grid: { color: 'rgba(124,58,237,0.08)' },
+          ticks: { color: '#64748b', font: { family: 'Inter', size: 11 }, stepSize: 1, precision: 0 }
         }
       }
     }
@@ -371,6 +467,7 @@ function populateDailyMonthDropdown() {
   const select = document.getElementById('daily-month-select');
   if (!select) return;
 
+  const previousMonth = select.value;
   select.innerHTML = '';
   months.forEach(m => {
     const [y, mo] = m.split('-');
@@ -382,7 +479,7 @@ function populateDailyMonthDropdown() {
   });
 
   // Default: bulan terbaru
-  if (months.length > 0) select.value = months[0];
+  if (months.length > 0) select.value = months.includes(previousMonth) ? previousMonth : months[0];
 }
 
 function renderDailyChart(yearMonth) {
@@ -431,15 +528,15 @@ function renderDailyChart(yearMonth) {
     `;
   }
 
-  // Warna bar: tinggi = oranye solid, nol = abu transparan
+  // Warna bar: tinggi = indigo solid, nol = abu transparan
   const maxVal = Math.max(...values, 1);
   const bgColors = values.map(v =>
     v === 0
-      ? 'rgba(200,180,170,0.20)'
-      : `rgba(234,97,24,${(0.25 + 0.75 * (v / maxVal)).toFixed(2)})`
+      ? 'rgba(203,213,225,0.35)'
+      : `rgba(109,40,217,${(0.25 + 0.75 * (v / maxVal)).toFixed(2)})`
   );
   const borderColors = values.map(v =>
-    v === 0 ? 'rgba(200,180,170,0.30)' : 'rgba(234,97,24,1)'
+    v === 0 ? 'rgba(203,213,225,0.50)' : 'rgba(109,40,217,1)'
   );
 
   if (charts.daily) { charts.daily.destroy(); delete charts.daily; }
@@ -476,12 +573,12 @@ function renderDailyChart(yearMonth) {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: '#9a6a42', font: { family: 'Inter', size: 11 } }
+          ticks: { color: '#64748b', font: { family: 'Inter', size: 11 } }
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(234,97,24,0.07)' },
-          ticks: { color: '#9a6a42', font: { family: 'Inter', size: 11 }, stepSize: 1, precision: 0 }
+          grid: { color: 'rgba(124,58,237,0.08)' },
+          ticks: { color: '#64748b', font: { family: 'Inter', size: 11 }, stepSize: 1, precision: 0 }
         }
       }
     }
@@ -500,7 +597,7 @@ function renderCategoryChart() {
       labels: Object.keys(counts),
       datasets: [{
         data: Object.values(counts),
-        backgroundColor: ['#0ea5e9','#3b82f6','#94a3b8'],
+        backgroundColor: ['#6d28d9','#0f766e','#6b7280'],
         borderWidth: 0,
         hoverOffset: 8,
       }]
@@ -511,7 +608,7 @@ function renderCategoryChart() {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { padding:16, font:{ family:'Inter', size:12 }, color:'#445566' }
+          labels: { padding:16, font:{ family:'Inter', size:12 }, color:'#334155' }
         },
         tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} orang` } }
       }
@@ -555,10 +652,10 @@ function renderDurationChart() {
         tooltip: { callbacks: { label: ctx => ` ${ctx.raw} pengunjung` } }
       },
       scales: {
-        x: { grid:{ display:false }, ticks:{ color:'#6b8299', font:{ family:'Inter', size:12 } } },
+        x: { grid:{ display:false }, ticks:{ color:'#64748b', font:{ family:'Inter', size:12 } } },
         y: { beginAtZero:true,
-             grid:{ color:'rgba(14,165,233,0.07)' },
-             ticks:{ color:'#6b8299', font:{ family:'Inter', size:12 }, stepSize:1, precision:0 } }
+             grid:{ color: 'rgba(124,58,237,0.08)' },
+             ticks:{ color:'#64748b', font:{ family:'Inter', size:12 }, stepSize:1, precision:0 } }
       }
     }
   });
@@ -609,10 +706,10 @@ function renderPurposeChart() {
       },
       scales: {
         x: { beginAtZero:true,
-             grid:{ color:'rgba(14,165,233,0.07)' },
-             ticks:{ color:'#6b8299', font:{ family:'Inter', size:11 }, stepSize:1, precision:0 } },
+             grid:{ color: 'rgba(124,58,237,0.08)' },
+             ticks:{ color:'#64748b', font:{ family:'Inter', size:11 }, stepSize:1, precision:0 } },
         y: { grid:{ display:false },
-             ticks:{ color:'#445566', font:{ family:'Inter', size:11 } } }
+             ticks:{ color:'#334155', font:{ family:'Inter', size:11 } } }
       }
     }
   });
