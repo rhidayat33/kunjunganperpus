@@ -131,160 +131,67 @@ function showDashboard() {
   document.getElementById('refresh-btn').style.display   = 'flex';
 }
 
-/* Short-lived, per-tab cache. Never persist visitor records in localStorage. */
-const STATS_CACHE_KEY = 'kunjungan_stats_session_v1';
-const CACHE_FRESH_MS = 30000;
-const CACHE_MAX_MS = 5 * 60000;
-let activeRequest = null;
-let requestSequence = 0;
-let displayedSource = null;
-let displayedSignature = null;
-let chartLibraryPromise = null;
-
-function statsRevision() {
-  try { return localStorage.getItem('kunjungan_stats_revision') || ''; } catch (_) { return ''; }
-}
-
-function readStatsCache(source) {
-  try {
-    const cache = JSON.parse(sessionStorage.getItem(STATS_CACHE_KEY));
-    if (!cache || cache.source !== source || !Array.isArray(cache.data) ||
-        !Number.isFinite(cache.savedAt) || Date.now() - cache.savedAt < 0 ||
-        Date.now() - cache.savedAt > CACHE_MAX_MS) return null;
-    if (!cache.data.every(d => d && typeof d.nama === 'string')) return null;
-    return cache;
-  } catch (_) { return null; }
-}
-
-function setSyncStatus(message) {
-  const badge = document.getElementById('sync-badge');
-  const text = document.getElementById('sync-text');
-  if (badge) badge.style.display = 'inline-flex';
-  if (text) text.textContent = message;
-}
-
-function loadChartLibrary() {
-  if (typeof Chart !== 'undefined') return Promise.resolve();
-  if (chartLibraryPromise) return chartLibraryPromise;
-  chartLibraryPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    const timer = setTimeout(() => finish(new Error('Grafik gagal dimuat')), 15000);
-    let done = false;
-    function finish(error) {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      script.onload = script.onerror = null;
-      if (error) { script.remove(); chartLibraryPromise = null; reject(error); }
-      else resolve();
-    }
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
-    script.async = true;
-    script.onload = () => finish(typeof Chart === 'undefined' ? new Error('Grafik tidak tersedia') : null);
-    script.onerror = () => finish(new Error('Grafik gagal dimuat'));
-    document.head.appendChild(script);
-  });
-  return chartLibraryPromise;
-}
-
+/* ── JSONP fetch (bypass CORS untuk file:// protocol) ── */
 function fetchJsonp(url) {
-  return new Promise((resolve, reject) => {
-    const callbackName = 'jsonpCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
-    const script = document.createElement('script');
-    let done = false;
-    const timer = setTimeout(() => finish(new Error('JSONP timeout')), 15000);
-    function finish(error, data) {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      script.remove();
+  return new Promise(function (resolve, reject) {
+    var callbackName = 'jsonpCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    var script = document.createElement('script');
+    var done   = false;
+
+    var cleanup = function () {
+      if (script.parentNode) script.parentNode.removeChild(script);
       delete window[callbackName];
-      if (error) reject(error); else resolve(data);
-    }
-    window[callbackName] = data => finish(null, data);
-    script.onerror = () => finish(new Error('JSONP request failed'));
-    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+    };
+
+    window[callbackName] = function (data) {
+      done = true;
+      cleanup();
+      resolve(data);
+    };
+
+    script.src     = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+    script.onerror = function () {
+      if (done) return;
+      cleanup();
+      reject(new Error('JSONP request failed'));
+    };
+
     document.head.appendChild(script);
+
+    // Timeout 15 detik
+    setTimeout(function () {
+      if (!done) {
+        cleanup();
+        reject(new Error('JSONP timeout'));
+      }
+    }, 15000);
   });
 }
 
-function displayStats(data, source) {
-  const signature = JSON.stringify(data);
-  if (source === displayedSource && signature === displayedSignature) return;
-  allData = data;
-  if (data.length) {
-    Chart.defaults.animation = false;
-    renderDashboard();
-  } else {
-    destroyAllCharts();
-    showEmpty('Belum ada data kunjungan yang tercatat. Ajak pengunjung mengisi daftar hadir!');
-  }
-  displayedSource = source;
-  displayedSignature = signature;
-}
+/* ── Fetch Data ── */
+async function fetchData() {
+  showLoading();
+  try {
+    const json = await fetchJsonp(`${appsScriptUrl}?action=getData`);
 
-/* Start data and chart downloads together; keep usable data visible on refresh. */
-function fetchData(force = false) {
-  const source = appsScriptUrl;
-  if (activeRequest && activeRequest.source === source && (!force || activeRequest.force)) {
-    return activeRequest.promise;
-  }
-  const sequence = ++requestSequence;
-  const revision = statsRevision();
-  const cache = readStatsCache(source);
-  const fresh = cache && cache.revision === revision && Date.now() - cache.savedAt < CACHE_FRESH_MS;
-  const chartReady = loadChartLibrary().then(() => null, error => error);
-  // Start the network request before awaiting cached rendering or the chart library.
-  const network = (!force && fresh) ? null : Promise.resolve().then(() => {
-    const endpoint = new URL(source);
-    endpoint.searchParams.set('action', 'getData');
-    if (force || (cache && cache.revision !== revision)) endpoint.searchParams.set('force', 'true');
-    return fetchJsonp(endpoint.href);
-  })
-    .then(json => ({json}), error => ({error}));
-  if (displayedSource !== source) showLoading();
-  setSyncStatus(cache ? 'Menampilkan data tersimpan…' : 'Memuat data kunjungan…');
-  const promise = (async () => {
-    try {
-      const chartError = await chartReady;
-      if (sequence !== requestSequence) return;
-      if (chartError) throw chartError;
-      if (cache) displayStats(cache.data, source);
-      if (!network) { setSyncStatus('Data terbaru · tersimpan sementara'); return; }
-      setSyncStatus('Memperbarui data…');
-      const response = await network;
-      if (sequence !== requestSequence) return;
-      if (response.error) throw response.error;
-      const json = response.json;
-      if (!json || json.status !== 'success' || !Array.isArray(json.data)) throw new Error('Respons tidak valid');
-      const data = json.data.filter(d => d && typeof d.nama === 'string' && d.nama.trim());
-      displayStats(data, source);
-      try {
-        sessionStorage.setItem(STATS_CACHE_KEY, JSON.stringify({source, data, revision, savedAt:Date.now()}));
-      } catch (_) { /* Storage can be unavailable or full; the dashboard remains usable. */ }
-      setSyncStatus('Diperbarui ' + new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}));
-    } catch (error) {
-      if (sequence !== requestSequence) return;
-      if (displayedSource === source) setSyncStatus('Pembaruan gagal · menampilkan data sebelumnya');
-      else {
-        showEmpty('Data atau grafik belum dapat dimuat. Periksa koneksi, lalu klik Muat Ulang.');
-        setSyncStatus('Gagal memuat');
+    if (json.status === 'success' && Array.isArray(json.data)) {
+      allData = json.data.filter(d => d.nama); // exclude blank rows
+      if (allData.length === 0) {
+        showEmpty('Belum ada data kunjungan yang tercatat. Ajak pengunjung mengisi daftar hadir!');
+        return;
       }
-    } finally {
-      if (sequence === requestSequence) {
-        activeRequest = null;
-        document.getElementById('refresh-btn').style.display = 'flex';
-      }
+      renderDashboard();
+    } else {
+      showEmpty('Gagal memuat data. Pastikan URL Apps Script sudah benar dan izin akses sudah diberikan.');
     }
-  })();
-  activeRequest = {source, force, promise};
-  return promise;
+  } catch (err) {
+    showEmpty('Tidak dapat terhubung ke Apps Script. Periksa URL dan koneksi internet Anda.');
+  }
 }
 
 
 /* ── Render All ── */
 function renderDashboard() {
-  showDashboard();
   updateStatCards();
   destroyAllCharts();
   renderTrendChart();
@@ -361,9 +268,6 @@ function updateStatCards() {
 /* ── Group by Period ── */
 function groupByPeriod(data, period) {
   const groups = {};
-  const dayFormatter = new Intl.DateTimeFormat('id-ID', { day:'2-digit', month:'short', year:'numeric' });
-  const weekFormatter = new Intl.DateTimeFormat('id-ID', { day:'2-digit', month:'short' });
-  const monthFormatter = new Intl.DateTimeFormat('id-ID', { month:'short', year:'numeric' });
   data.forEach(d => {
     try {
       if (!d.timestamp) return;
@@ -372,14 +276,14 @@ function groupByPeriod(data, period) {
       let key;
       if (period === 'harian') {
         // Per hari: dd Mmm yyyy
-        key = dayFormatter.format(date);
+        key = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
       } else if (period === 'mingguan') {
         const dow = date.getDay();  // 0=Sun
         const monday = new Date(date);
         monday.setDate(date.getDate() - ((dow + 6) % 7));
-        key = 'Minggu ' + weekFormatter.format(monday);
+        key = 'Minggu ' + monday.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
       } else {
-        key = monthFormatter.format(date);
+        key = date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
       }
       groups[key] = (groups[key] || 0) + 1;
     } catch { /* skip */ }
@@ -467,7 +371,6 @@ function populateDailyMonthDropdown() {
   const select = document.getElementById('daily-month-select');
   if (!select) return;
 
-  const previousMonth = select.value;
   select.innerHTML = '';
   months.forEach(m => {
     const [y, mo] = m.split('-');
@@ -479,7 +382,7 @@ function populateDailyMonthDropdown() {
   });
 
   // Default: bulan terbaru
-  if (months.length > 0) select.value = months.includes(previousMonth) ? previousMonth : months[0];
+  if (months.length > 0) select.value = months[0];
 }
 
 function renderDailyChart(yearMonth) {
@@ -661,28 +564,45 @@ function renderDurationChart() {
   });
 }
 
-/* ── Chart: Purpose (Horizontal Bar) ── */
+/* ── Chart: Purpose (Horizontal Bar - Top 10) ── */
 function renderPurposeChart() {
   // Count each purpose
   const counts = {};
   TUJUAN_LIST.forEach(t => counts[t] = 0);
+
+  const normalizeText = (str) =>
+    (str || '').toLowerCase().replace(/\batau\b/g, '/').replace(/[\s\/-]+/g, '');
+
   allData.forEach(d => {
     if (!d.tujuan) return;
-    d.tujuan.split('|').forEach(t => {
-      const clean = t.trim();
+    // Mendukung pemisah pipe (|) maupun koma (,) dari input Google Form / Sheet
+    d.tujuan.split(/[|,]/).forEach(t => {
+      let clean = t.trim();
+      if (!clean) return;
+
+      // Normalisasi agar variasi penulisan cocok dengan entri baku di TUJUAN_LIST
+      const matched = TUJUAN_LIST.find(item =>
+        normalizeText(item) === normalizeText(clean)
+      );
+      if (matched) clean = matched;
+
       if (counts[clean] !== undefined) counts[clean]++;
-      else if (clean) counts[clean] = (counts[clean] || 0) + 1;
+      else counts[clean] = 1;
     });
   });
 
-  // Sort descending
-  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  // Sort descending, filter entri dengan jumlah > 0, dan ambil TOP 10 saja
+  const sorted = Object.entries(counts)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
   const labels = sorted.map(([k]) => k);
-  const values = sorted.map(([,v]) => v);
+  const values = sorted.map(([, v]) => v);
 
   // Colour palette cycling
-  const colorKeys = ['sky','blue','cyan','green','amber','purple','rose','slate'];
-  const bgColors  = labels.map((_,i) => CHART_COLORS[colorKeys[i % colorKeys.length]] + '0.72)');
+  const colorKeys = ['sky', 'blue', 'cyan', 'green', 'amber', 'purple', 'rose', 'slate'];
+  const bgColors  = labels.map((_, i) => CHART_COLORS[colorKeys[i % colorKeys.length]] + '0.72)');
 
   const ctx = document.getElementById('chart-purpose').getContext('2d');
   charts.purpose = new Chart(ctx, {
@@ -699,17 +619,35 @@ function renderPurposeChart() {
     },
     options: {
       indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} pengunjung` } }
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${Number(ctx.raw).toLocaleString('id-ID')} pengunjung`
+          }
+        }
       },
       scales: {
-        x: { beginAtZero:true,
-             grid:{ color: 'rgba(124,58,237,0.08)' },
-             ticks:{ color:'#64748b', font:{ family:'Inter', size:11 }, stepSize:1, precision:0 } },
-        y: { grid:{ display:false },
-             ticks:{ color:'#334155', font:{ family:'Inter', size:11 } } }
+        x: {
+          beginAtZero: true,
+          grid: { color: 'rgba(124,58,237,0.08)' },
+          ticks: {
+            color: '#64748b',
+            font: { family: 'Inter', size: 11 },
+            precision: 0,
+            callback: value => Number(value).toLocaleString('id-ID')
+          }
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            color: '#334155',
+            font: { family: 'Inter', size: 11 },
+            autoSkip: false
+          }
+        }
       }
     }
   });

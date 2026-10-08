@@ -156,7 +156,7 @@ async function handleSubmit() {
   /* ── Send Data ── */
   const btn = document.getElementById('submit-btn');
   btn.disabled    = true;
-  btn.textContent = 'Menyimpan kehadiran...';
+  btn.textContent = '⏳ Mengirim data...';
 
   const formData = new FormData();
   formData.append('nama',   nama);
@@ -170,22 +170,21 @@ async function handleSubmit() {
   } catch (err) {
     showAlert('Gagal mengirim data. Periksa koneksi internet dan URL Apps Script.', 'error');
     btn.disabled    = false;
-    btn.textContent = 'Simpan Kehadiran';
+    btn.textContent = '✅ Kirim Daftar Hadir';
   }
 }
 
 function onSubmitSuccess(nama) {
-  try { localStorage.setItem('kunjungan_stats_revision', String(Date.now())); } catch (_) {}
   const category = detectCategory(nama);
   const label    = (category === 'Tamu') ? nama : category;
   showAlert(
-    `Terima kasih, ${label}! Daftar hadirmu sudah dikirim. Selamat menikmati waktu di perpus!`,
+    `✅ Terima kasih, ${label}! Daftar hadir Anda berhasil dicatat. Selamat menggunakan fasilitas perpustakaan.`,
     'success'
   );
   // Update aside counter
   document.dispatchEvent(new CustomEvent('kunjungan:submit-success'));
   resetForm();
-  document.getElementById('alert-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function resetForm() {
@@ -195,7 +194,7 @@ function resetForm() {
   document.querySelectorAll('input[name="durasi"]').forEach(rb => rb.checked = false);
   const btn = document.getElementById('submit-btn');
   btn.disabled    = false;
-  btn.textContent = 'Simpan Kehadiran';
+  btn.textContent = '✅ Kirim Daftar Hadir';
 }
 
 /* ── Alert Helpers ── */
@@ -203,7 +202,7 @@ function showAlert(message, type) {
   const el = document.getElementById('alert-box');
   el.className   = `alert-box ${type}`;
   el.style.display = 'flex';
-  el.textContent = message;
+  el.innerHTML   = message;
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
